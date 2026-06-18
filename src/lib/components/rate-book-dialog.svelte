@@ -1,6 +1,5 @@
 <script lang="ts">
 	type ShelfEntrySummary = {
-		id: string;
 		rating: number | null;
 		book: { title: string; author: string };
 	};
@@ -15,11 +14,7 @@
 		oncancel: () => void;
 	} = $props();
 
-	let pendingRating = $state<number>(0);
-
-	$effect(() => {
-		pendingRating = entry.rating ?? 0;
-	});
+	let pendingRating = $derived(entry.rating ?? 0);
 	const stars = [1, 2, 3, 4, 5];
 
 	const handleSubmit = async (event: SubmitEvent) => {
