@@ -1,8 +1,7 @@
 import { env } from '$env/dynamic/private';
 import { error, json } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
-import { APIError } from 'better-auth/api';
-import { auth } from '$lib/server/auth';
+import { createUser } from '$lib/server/users';
 import { db } from '$lib/server/db';
 import { book, shelfEntry, user } from '$lib/server/db/schema';
 import type { RequestHandler } from './$types';
@@ -73,6 +72,7 @@ const ensureUser = async (
 	email: string,
 	password: string,
 	name: string,
+	isAdmin: boolean,
 	resetUsers: boolean
 ): Promise<SeededUser> => {
 	const [existing] = await db.select().from(user).where(eq(user.email, email)).limit(1);
@@ -85,21 +85,10 @@ const ensureUser = async (
 		await db.delete(user).where(eq(user.id, existing.id));
 	}
 
-	try {
-		await auth.api.signUpEmail({ body: { email, password, name } });
-	} catch (signUpError) {
-		if (!(signUpError instanceof APIError)) {
-			throw signUpError;
-		}
-		throw new Error(`signUpEmail failed for ${email}: ${signUpError.message}`, {
-			cause: signUpError
-		});
-	}
-
-	const [created] = await db.select().from(user).where(eq(user.email, email)).limit(1);
-	if (!created) {
-		throw new Error(`Failed to provision user ${email}`);
-	}
+	// Use the app's own user creation (custom password hashing) so seeded
+	// accounts authenticate through /login exactly like real ones. Better Auth
+	// is not the sign-in mechanism here.
+	const created = await createUser({ email, password, name, isAdmin });
 	return { id: created.id, email: created.email };
 };
 
@@ -120,6 +109,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		body.readerEmail ?? 'alice@example.com',
 		body.readerPassword ?? 'ShelfStarter123!',
 		body.readerName ?? 'Alice Reader',
+		false,
 		resetUsers
 	);
 
@@ -127,6 +117,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		body.adminEmail ?? 'admin@example.com',
 		body.adminPassword ?? 'ShelfStarter123!',
 		body.adminName ?? 'Admin Reader',
+		true,
 		resetUsers
 	);
 

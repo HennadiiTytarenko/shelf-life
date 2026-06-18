@@ -83,10 +83,23 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Create .env for preview server
         run: |
-          cat > .env <<'EOF'
+          # ORIGIN sets Better Auth's baseURL and must match the host the
+          # preview server is served on (see webServer.url in playwright.config.ts).
+          # BETTER_AUTH_SECRET is generated fresh per run: Better Auth refuses to
+          # boot in production/preview mode with the default secret. The CI database
+          # is an ephemeral throwaway, so this secret protects nothing real.
+          cat > .env <<EOF
           DATABASE_URL=file:./ci.db
           OPEN_LIBRARY_BASE_URL=https://openlibrary.org
+          ORIGIN=http://127.0.0.1:4173
+          BETTER_AUTH_SECRET=$(openssl rand -hex 32)
+          ENABLE_TEST_SEED=true
           EOF
+      - name: Push database schema
+        # `npm ci --ignore-scripts` skips the `prepare` script, so db:push (which
+        # creates the SQLite schema) never runs. Push it explicitly against ci.db
+        # before the preview server starts, or every page 500s on a missing table.
+        run: npm run db:push
       - name: Run Playwright
         run: npm run test
       - name: Generate failure dossier
