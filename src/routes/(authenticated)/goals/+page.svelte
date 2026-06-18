@@ -3,6 +3,7 @@
 	import Input from '$lib/components/input.svelte';
 	import PageHeader from '$lib/components/page-header.svelte';
 	import SurfaceCard from '$lib/components/surface-card.svelte';
+	import { formatFinishedThisYearLabel } from '$lib/reading-stats';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -72,6 +73,15 @@
 			description={`Finished books in ${progress.year} count toward your goal.`}
 		>
 			<div class="space-y-4">
+				<dl class="rounded-2xl border border-(--color-border) bg-(--color-surface-soft) p-4">
+					<dt class="text-xs font-semibold tracking-[0.18em] text-(--color-muted) uppercase">
+						Finished this year
+					</dt>
+					<dd class="font-display text-3xl text-(--color-ink)">
+						{formatFinishedThisYearLabel(progress.finishedBooks)}
+					</dd>
+				</dl>
+
 				<p class="font-display text-3xl text-(--color-ink)" aria-label="Reading progress summary">
 					{progressLabel}
 				</p>

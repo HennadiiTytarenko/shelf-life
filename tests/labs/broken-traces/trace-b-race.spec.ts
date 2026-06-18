@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { resetShelfContent } from '../../helpers/seed';
 
-test.skip();
+//test.skip();
 
 /**
  * Trace B: timing race.
@@ -18,8 +18,8 @@ test.skip();
  * Do not "fix" this test — the failure IS the lesson.
  */
 
-test.beforeEach(async () => {
-	await resetShelfContent();
+test.beforeEach(async ({ request }) => {
+	await resetShelfContent(request);
 });
 
 test('rating appears immediately after submit', async ({ page }) => {

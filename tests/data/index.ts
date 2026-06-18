@@ -1,6 +1,6 @@
-import books from './books.json';
-import shelfEntries from './shelf-entries.json';
-import users from './users.json';
+import books from './books.json' with { type: 'json' };
+import shelfEntries from './shelf-entries.json' with { type: 'json' };
+import users from './users.json' with { type: 'json' };
 
 const [reader, admin] = users;
 

@@ -1,41 +1,53 @@
-import type { BookSummary, UserSummary } from '../../src/lib/server/db';
-// import * as data from '../data';
+import type { APIRequestContext } from '@playwright/test';
+
+/**
+ * Known reader account used by every authenticated end-to-end test. Kept in
+ * sync with the `/api/testing/seed` defaults so individual specs never need
+ * to invent their own fixture users.
+ */
+export const SEEDED_READER = {
+	email: 'alice@example.com',
+	password: 'ShelfStarter123!',
+	name: 'Alice Reader'
+} as const;
+
+export type SeededBookSummary = {
+	id: string;
+	openLibraryId: string;
+	title: string;
+};
 
 export type SeedResult = {
-	reader: UserSummary;
-	admin: UserSummary;
-	books: BookSummary[];
+	reader: { id: string; email: string };
+	admin: { id: string; email: string };
+	books: SeededBookSummary[];
 };
 
-const notImplemented = (functionName: string): never => {
-	throw new Error(
-		`${functionName} is part of the deterministic seeding lab. Build it in tests/helpers/seed.ts using tests/data/*.json plus the create/delete helpers in src/lib/server.`
-	);
+const postSeed = async (
+	request: APIRequestContext,
+	body: Record<string, unknown>
+): Promise<SeedResult> => {
+	const response = await request.post('/api/testing/seed', { data: body });
+	if (!response.ok()) {
+		throw new Error(
+			`Seeding failed: ${response.status()} ${await response.text().catch(() => '')}`
+		);
+	}
+	return (await response.json()) as SeedResult;
 };
 
 /**
- * Rebuilds the test database from `tests/data/*.json`.
- *
- * The intended implementation should:
- * - remove existing users, books, and shelf entries
- * - recreate the reader and admin users from `users.json`
- * - recreate the books from `books.json`
- * - recreate the shelf entries from `shelf-entries.json`
- * - return the created reader/admin user summaries plus the created books
+ * Fully reset the database, including user accounts and sessions. Only the
+ * authentication setup project should call this — individual specs should use
+ * `resetShelfContent` so the stored browser session stays valid.
  */
-export async function seedFreshDatabase(): Promise<SeedResult> {
-	return notImplemented('seedFreshDatabase');
-}
+export const seedFreshDatabase = (request: APIRequestContext): Promise<SeedResult> =>
+	postSeed(request, { resetUsers: true });
 
 /**
- * Resets shelf state without destroying existing user accounts or sessions.
- *
- * The intended implementation should:
- * - leave the existing reader/admin users in place
- * - delete and recreate books from `books.json`
- * - delete and recreate shelf entries from `shelf-entries.json`
- * - return the existing reader/admin user summaries plus the recreated books
+ * Reset book and shelf content to the baseline fixtures without touching user
+ * accounts or sessions. Safe to call from specs that run inside the
+ * `authenticated` project (it leaves the storage-state cookie valid).
  */
-export async function resetShelfContent(): Promise<SeedResult> {
-	return notImplemented('resetShelfContent');
-}
+export const resetShelfContent = (request: APIRequestContext): Promise<SeedResult> =>
+	postSeed(request, {});

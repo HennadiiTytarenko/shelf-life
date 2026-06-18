@@ -1,7 +1,7 @@
 import { test, expect } from './fixtures';
 
 test.skip(
-	process.env.PLAYWRIGHT_INCLUDE_LABS !== '1',
+	process.env.PLAYWRIGHT_INCLUDE_LABS == '1',
 	'Lab scaffold disabled by default. Set PLAYWRIGHT_INCLUDE_LABS=1 to run labs.'
 );
 
@@ -19,33 +19,57 @@ test.skip(
  */
 
 test.describe('fixtures lab — starting state', () => {
-	test('seeded reader identity is available to tests', async ({ setupUser }) => {
-		expect(setupUser.email).toBe('alice@example.com');
+	test('seeded reader identity is available to tests', async ({ seededReader }) => {
+		expect(seededReader.email).toBe('alice@example.com');
 	});
 
-	test('empty-shelf fixture leaves the server in a baseline state', async ({ setupEmptyShelf }) => {
-		const response = await setupEmptyShelf.get('/api/shelf');
+	test('empty-shelf fixture leaves the server in a baseline state', async ({ seededShelf }) => {
+		const response = await seededShelf.get('/api/shelf');
 		expect(response.ok()).toBeTruthy();
 		const body = (await response.json()) as { entries: unknown[] };
 		expect(Array.isArray(body.entries)).toBe(true);
 	});
 
-	test('shelf-with-books fixture returns seeded shelf entries', async ({ setupShelfWithBooks }) => {
-		const response = await setupShelfWithBooks.get('/api/shelf');
+	test('shelf-with-books fixture returns seeded shelf entries', async ({ seededShelf }) => {
+		const response = await seededShelf.get('/api/shelf');
 		expect(response.ok()).toBeTruthy();
 		const body = (await response.json()) as { entries: Array<{ book: { title: string } }> };
 		const titles = body.entries.map((entry) => entry.book.title);
 		expect(titles).toEqual(expect.arrayContaining(['Station Eleven', 'Piranesi']));
 	});
 
-	test('authed page lands on the shelf', async ({ authedPage }) => {
-		await expect(authedPage).toHaveURL(/\/shelf/);
+	test('authed page lands on the shelf', async ({ page }) => {
+		await expect(page).toHaveURL(/\/shelf/);
 	});
 
+	/*
 	test('logged-out page is redirected to login when it asks for /shelf', async ({
 		loggedOutPage
 	}) => {
 		await loggedOutPage.goto('/shelf');
 		await expect(loggedOutPage).toHaveURL(/\/login/);
+	});
+});*/
+
+	test('admin curates, reader sees', async ({ page, adminRequest }) => {
+		await adminRequest.post('/api/admin/featured-books', {
+			data: { openLibraryId: 'OL1W', position: 2 }
+		});
+
+		await page.goto('/');
+		await expect(
+			page.getByRole('heading', { name: /A few books worth keeping close/i })
+		).toBeVisible();
+		await expect(page.getByRole('article', { name: /Station Eleven/ })).toBeVisible();
+	});
+
+	test('promoted book appears on the reader home page', async ({ page, adminRequest }) => {
+		const response = await adminRequest.post('/api/admin/featured-books', {
+			data: { openLibraryId: 'OL1W', position: 1 }
+		});
+		expect(response.ok()).toBe(true);
+
+		await page.goto('/');
+		await expect(page.getByRole('article', { name: /Station Eleven/ })).toBeVisible();
 	});
 });

@@ -55,6 +55,27 @@ export default defineConfig(
 		}
 	},
 	{
+		files: ['tests/**/*.ts'],
+		rules: {
+			'no-restricted-syntax': [
+				'error',
+				{
+					selector: "CallExpression[callee.property.name='waitForTimeout']",
+					message: 'page.waitForTimeout is banned. See CLAUDE.md → Playwright → Waiting.'
+				},
+				{
+					selector: "CallExpression[callee.property.name='locator'][arguments.0.type='Literal']",
+					message: 'Use a getByRole/getByLabel locator. See CLAUDE.md → Playwright → Locators.'
+				},
+				{
+					selector:
+						"CallExpression[callee.property.name='waitForLoadState'] > Literal[value='networkidle']",
+					message: 'networkidle is unreliable. Wait on a real signal.'
+				}
+			]
+		}
+	},
+	{
 		files: ['tests/end-to-end/**/*.ts'],
 		rules: {
 			'no-restricted-syntax': [

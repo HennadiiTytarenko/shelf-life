@@ -25,8 +25,8 @@ test.skip();
  * Do not "fix" this test — the failure IS the lesson.
  */
 
-test.beforeEach(async () => {
-	await resetShelfContent();
+test.beforeEach(async ({ request }) => {
+	await resetShelfContent(request);
 });
 
 test('user can click the rate-this-book button on the shelf', async ({ page }) => {

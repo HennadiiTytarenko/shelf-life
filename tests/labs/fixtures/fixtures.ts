@@ -1,5 +1,6 @@
-import { test as base, expect } from '@playwright/test';
-import type { APIRequestContext, Page } from '@playwright/test';
+import path from 'node:path';
+import { test as base } from '@playwright/test';
+import type { APIRequestContext, Browser } from '@playwright/test';
 import { resetShelfContent } from '../../helpers/seed';
 
 /**
@@ -23,7 +24,7 @@ import { resetShelfContent } from '../../helpers/seed';
  * The solution lives on the course site in the fixtures-refactor solution
  * writeup. This repository intentionally keeps only the exercise file.
  */
-
+/*
 type LabFixtures = {
 	setupUser: { email: string };
 	setupEmptyShelf: APIRequestContext;
@@ -32,55 +33,133 @@ type LabFixtures = {
 	loggedOutPage: Page;
 };
 
-export const test = base.extend<LabFixtures>({
-	// Smell: name is a setup verb, not what it provides. Smell: no scope
-	// comment. Smell: this is a one-liner that doesn't need to be a fixture
-	// at all — it's just a constant.
-	// eslint-disable-next-line no-empty-pattern
-	setupUser: async ({}, use) => {
-		await use({ email: 'alice@example.com' });
-	},
+export const test = base
+	.extend<LabFixtures>({
+		// Smell: name is a setup verb, not what it provides. Smell: no scope
+		// comment. Smell: this is a one-liner that doesn't need to be a fixture
+		// at all — it's just a constant.
+		// eslint-disable-next-line no-empty-pattern
+		setupUser: async ({}, use) => {
+			await use({ email: 'alice@example.com' });
+		},
 
-	// Smell: this mutates server state but has no teardown half.
-	setupEmptyShelf: async ({ request }, use) => {
-		await resetShelfContent();
-		// What happens between tests? Nothing. The next test inherits
-		// whatever mess this one left behind.
-		await use(request);
-	},
+		// Smell: this mutates server state but has no teardown half.
+		setupEmptyShelf: async ({ request }, use) => {
+			await resetShelfContent();
+			// What happens between tests? Nothing. The next test inherits
+			// whatever mess this one left behind.
+			await use(request);
+		},
 
-	// Smell: same as above, and it duplicates `resetShelfContent` — the seed
-	// helper already shelves two books by default. This fixture is a
-	// helper wearing a fixture costume.
-	setupShelfWithBooks: async ({ request }, use) => {
-		await resetShelfContent();
-		await use(request);
-	},
+		// Smell: same as above, and it duplicates `resetShelfContent` — the seed
+		// helper already shelves two books by default. This fixture is a
+		// helper wearing a fixture costume.
+		setupShelfWithBooks: async ({ request }, use) => {
+			await resetShelfContent();
+			await use(request);
+		},
 
-	// Smell: this "fixture" just returns the default `page` with a login
-	// navigation. No teardown. No justification for why it's a fixture
-	// instead of a `beforeEach`.
-	authedPage: async ({ page }, use) => {
-		// By the time this lab runs, you should already have some authenticated
-		// default Playwright setup for protected Shelf pages. This fixture
-		// pretends to do that work anyway, which is the exact confusion the
-		// lesson is trying to prevent.
-		await page.goto('/shelf');
-		await expect(page).toHaveURL(/\/shelf/);
-		await use(page);
-	},
+		// Smell: this "fixture" just returns the default `page` with a login
+		// navigation. No teardown. No justification for why it's a fixture
+		// instead of a `beforeEach`.
+		authedPage: async ({ browser }, use) => {
+			// By the time this lab runs, you should already have some authenticated
+			// default Playwright setup for protected Shelf pages. This fixture
+			// pretends to do that work anyway, which is the exact confusion the
+			// lesson is trying to prevent.
+			const context = await browser.newContext({
+				storageState: 'playwright/.authentication/user.json'
+			});
 
-	// Smell: only used in one place, would be clearer as a helper function.
-	loggedOutPage: async ({ browser }, use) => {
-		const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
-		const fresh = await context.newPage();
-		await use(fresh);
-		// Teardown exists, which is good — but the fixture itself is
-		// helper-shaped: one test uses it, it's awkward to compose, and it
-		// fights the authenticated default browser state you already set up
-		// for the lab run.
-		await context.close();
-	}
-});
+			const page = await context.newPage();
+			await page.goto('/shelf');
+			await expect(page).toHaveURL(/\/shelf/);
+			await use(page);
+		},
+
+		// Smell: only used in one place, would be clearer as a helper function.
+		loggedOutPage: async ({ browser }, use) => {
+			const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+			const fresh = await context.newPage();
+			await use(fresh);
+			// Teardown exists, which is good — but the fixture itself is
+			// helper-shaped: one test uses it, it's awkward to compose, and it
+			// fights the authenticated default browser state you already set up
+			// for the lab run.
+			await context.close();
+		}
+	})*/
+
+type SeededReader = {
+	email: string;
+	name: string;
+};
+
+type GoodFixtures = {
+	seededReader: SeededReader;
+	seededShelf: APIRequestContext;
+};
+
+export const test = base
+	.extend<GoodFixtures>({
+		// Test-scoped: see above.
+		// eslint-disable-next-line no-empty-pattern
+		seededReader: async ({}, use) => {
+			await use({ email: 'alice@example.com', name: 'Alice Reader' });
+		},
+
+		// Test-scoped: see above.
+		seededShelf: async ({ request }, use) => {
+			await resetShelfContent(request);
+			await use(request);
+			await resetShelfContent(request);
+		}
+	})
+	.extend<{ adminRequest: APIRequestContext }>({
+		adminRequest: async ({ playwright }, use) => {
+			const context = await playwright.request.newContext({
+				storageState: path.resolve('playwright/.authentication/admin.json')
+			});
+			await use(context);
+			await context.dispose();
+		}
+	})
+	.extend({
+		page: async ({ page }, use) => {
+			page.on('console', (message) => {
+				const messageType = message.type();
+				if (messageType === 'error' || messageType === 'warning') {
+					console.error(`[browser ${messageType}] ${message.text()}`);
+				}
+			});
+
+			page.on('pageerror', (error) => {
+				console.error(`[browser pageerror] ${error.message}`);
+			});
+
+			page.on('requestfailed', (request) => {
+				const failureText = request.failure()?.errorText ?? 'unknown error';
+				if (failureText.includes('ERR_ABORTED') || failureText.includes('NS_BINDING_ABORTED')) {
+					return;
+				}
+				console.error(`[network failed] ${request.method()} ${request.url()} - ${failureText}`);
+			});
+
+			page.on('response', (response) => {
+				if (response.status() >= 400) {
+					console.error(
+						`[network ${response.status()}] ${response.request().method()} ${response.url()}`
+					);
+				}
+			});
+
+			await use(page);
+		}
+	});
+export const openLoggedOutPage = async (browser: Browser) => {
+	const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+	const page = await context.newPage();
+	return { page, context };
+};
 
 export { expect } from '@playwright/test';
