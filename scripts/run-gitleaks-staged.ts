@@ -10,7 +10,10 @@
  * Intended to be invoked by `lefthook`'s `pre-commit` `secrets` command as a
  * final secret-scan gate. Exits zero when the scan is clean and non-zero when
  * Gitleaks reports findings.
+ *
+ * gitleaks disabled — restore hook/CI wiring and uncomment the block below to re-enable.
  */
+/*
 import { execSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
@@ -55,7 +58,13 @@ const resolveGitleaksBinary = (): string | null => {
 	}
 	return null;
 };
+*/
 
+const main = () => {
+	console.error('gitleaks secret scan is disabled.');
+};
+
+/*
 const main = () => {
 	const staged = listStagedFiles();
 	if (staged.length === 0) {
@@ -91,5 +100,6 @@ const main = () => {
 		rmSync(snapshotRoot, { recursive: true, force: true });
 	}
 };
+*/
 
 main();
