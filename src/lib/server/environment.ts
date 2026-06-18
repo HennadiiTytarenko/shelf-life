@@ -5,7 +5,11 @@ type EnvironmentConfiguration = {
 	openLibraryBaseUrl: string;
 };
 
-process.loadEnvFile?.();
+try {
+	process.loadEnvFile?.();
+} catch {
+	// .env is optional; defaults are applied below
+}
 
 export const DEFAULT_DATABASE_URL = 'file:./local.db';
 export const DEFAULT_OPEN_LIBRARY_BASE_URL = 'https://openlibrary.org';
