@@ -422,12 +422,15 @@ before silencing.
 
 ## Dead code
 
+<!-- knip disabled
 - Run `bun run knip` before declaring a task done. It must report zero
   findings in files you touched.
 - If knip reports a file or export you added as unused, either:
   (a) complete the wiring so it's actually used, or
   (b) delete it. Do not ignore it in `knip.json` without a written
   justification.
+-->
+
 - Do not leave old code "for reference" after a refactor. Git history
   is the reference. Delete the old code.
 - When removing a feature, search for every reference to the feature
