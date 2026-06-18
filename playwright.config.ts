@@ -47,7 +47,7 @@ export default defineConfig({
     },
 
 	
-	*/  
+	*/
 		{
 			name: 'setup',
 			testMatch: /authentication\.setup\.ts/
@@ -58,7 +58,7 @@ export default defineConfig({
 		},
 		{
 			name: 'public-shelf',
-			testMatch: /(smoke|public-shelf)\.spec\.ts/,
+			testMatch: /(smoke|public-shelf)\.spec\.ts/
 			//dependencies: ['setup'],
 		},
 		{
@@ -76,10 +76,10 @@ export default defineConfig({
 			name: 'authenticated',
 			testMatch: /(rate-book|accessibility|visual-authenticated|performance)\.spec\.ts/,
 			use: {
-			  ...devices.DesktopChrome,
-			  storageState: path.resolve('playwright/.authentication/user.json'),
+				...devices.DesktopChrome,
+				storageState: path.resolve('playwright/.authentication/user.json')
 			},
-			dependencies: ['setup'],
-		  },
+			dependencies: ['setup']
+		}
 	]
 });

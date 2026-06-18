@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { resetShelfContent } from './helpers/seed';
 
 test.beforeEach(async ({ request }) => {
-    await resetShelfContent(request);
+	await resetShelfContent(request);
 });
 
 test('shelf page matches the seeded visual baseline', async ({ page }) => {
