@@ -1,6 +1,7 @@
 // tests/smoke/post-deploy.spec.ts
 import { expect, test } from '@playwright/test';
 
+//TEST
 const smokeBaseUrl = process.env.SMOKE_BASE_URL ?? 'http://127.0.0.1:4173';
 
 test.use({ baseURL: smokeBaseUrl });

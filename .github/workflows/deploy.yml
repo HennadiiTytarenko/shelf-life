@@ -1,49 +1,49 @@
-# .github/workflows/deploy.yml
-name: Deploy
+# # .github/workflows/deploy.yml
+# name: Deploy
 
-on:
-  push:
-    branches: [main]
-  workflow_dispatch:
+# on:
+#   push:
+#     branches: [main]
+#   workflow_dispatch:
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    outputs:
-      url: ${{ steps.deploy.outputs.url }}
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: '24'
-      - run: npm ci --ignore-scripts
-      - run: npm run build
-      - name: Deploy
-        id: deploy
-        run: |
-          # Replace with your real deploy command. The important part
-          # is that this step prints the deployed URL so the smoke job
-          # can read it from the job output.
-          echo "url=http://127.0.0.1:4173" >> "$GITHUB_OUTPUT"
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+#     outputs:
+#       url: ${{ steps.deploy.outputs.url }}
+#     steps:
+#       - uses: actions/checkout@v6
+#       - uses: actions/setup-node@v6
+#         with:
+#           node-version: '24'
+#       - run: npm ci --ignore-scripts
+#       - run: npm run build
+#       - name: Deploy
+#         id: deploy
+#         run: |
+#           # Replace with your real deploy command. The important part
+#           # is that this step prints the deployed URL so the smoke job
+#           # can read it from the job output.
+#           echo "url=http://127.0.0.1:4173" >> "$GITHUB_OUTPUT"
 
-  smoke:
-    needs: deploy
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: '24'
-      - run: npm ci --ignore-scripts
-      - run: npx playwright install --with-deps chromium
-      - name: Run post-deploy smoke check
-        env:
-          SMOKE_BASE_URL: ${{ needs.deploy.outputs.url }}
-        run: npm run test:smoke
-      - name: Upload report on failure
-        if: failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: smoke-report
-          path: playwright-report/
-          retention-days: 7
+#   smoke:
+#     needs: deploy
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v6
+#       - uses: actions/setup-node@v6
+#         with:
+#           node-version: '24'
+#       - run: npm ci --ignore-scripts
+#       - run: npx playwright install --with-deps chromium
+#       - name: Run post-deploy smoke check
+#         env:
+#           SMOKE_BASE_URL: ${{ needs.deploy.outputs.url }}
+#         run: npm run test:smoke
+#       - name: Upload report on failure
+#         if: failure()
+#         uses: actions/upload-artifact@v7
+#         with:
+#           name: smoke-report
+#           path: playwright-report/
+#           retention-days: 7
