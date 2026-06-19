@@ -24,7 +24,7 @@ jobs:
           # Replace with your real deploy command. The important part
           # is that this step prints the deployed URL so the smoke job
           # can read it from the job output.
-          echo "url=https://shelf-preview.example.com" >> "$GITHUB_OUTPUT"
+          echo "url=http://127.0.0.1:4173" >> "$GITHUB_OUTPUT"
 
   smoke:
     needs: deploy
