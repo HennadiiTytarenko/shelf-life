@@ -490,3 +490,15 @@ be mistaken for real keys.
 - The nightly HAR refresh opens a PR. If the diff is suspicious, do not
   merge it—investigate whether the upstream API changed in a way that
   requires application code changes.
+
+  ## Post-merge and post-deploy
+
+- A green pull request is not the end of the loop. After merge or after
+  a deploy preview is available, run the post-deploy smoke check against
+  the deployed URL.
+- Use the named smoke-test command and the deployment URL provided by the
+  workflow or environment.
+- If the smoke check fails, treat that as a stop-ship signal. Do not
+  wave the deploy through in the summary.
+- If rollback conditions are met, recommend rollback explicitly instead
+  of describing the failure passively.
